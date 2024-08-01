@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lms-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: lms-app
+  template:
+    metadata:
+      labels:
+        app: lms-app
+    spec:
+      containers:
+      - name: lms-app
+        image: jee46/taskk:latest
+        ports:
+        - containerPort: 5000
+        volumeMounts:
+        - name: my-lms-storage
+          mountPath: /mnt/data
+      volumes:
+      - name: my-lms-storage
+        persistentVolumeClaim:
+          claimName: my-lms-storage-pvc

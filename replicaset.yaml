@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: lms-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: lms-app
+  template:
+    metadata:
+      labels:
+        app: lms-app
+    spec:
+      containers:
+      - name: lms-app
+        image: jee46/taskk:latest
+        ports:
+        - containerPort: 5000
