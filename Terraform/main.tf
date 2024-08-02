@@ -1,11 +1,8 @@
-# Main configuration file for TeamTwo AWS EKS cluster deployment
-
 provider "aws" {
   region = var.region
 }
 
-# Filter out local zones, which are not currently supported 
-# with managed node groups
+# Filter out local zones, which are not currently supported with managed node groups
 data "aws_availability_zones" "available" {
   filter {
     name   = "opt-in-status"
@@ -13,13 +10,13 @@ data "aws_availability_zones" "available" {
   }
 }
 
-locals {
-  cluster_name = "TeamTwoCluster-${random_string.suffix.result}"
-}
-
 resource "random_string" "suffix" {
   length  = 8
   special = false
+}
+
+locals {
+  cluster_name = "TeamTwoCluster-${random_string.suffix.result}"
 }
 
 # Security group for TeamTwo EKS cluster, with enhanced rules
@@ -160,11 +157,47 @@ resource "aws_lb_listener" "teamtwo_listener" {
   }
 }
 
+# IAM Role for Bahr-jinkins with EKS Access Permissions
+resource "aws_iam_role" "eks_access_role" {
+  name = "TeamTwoEksAccessRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Principal = {
+        AWS = "arn:aws:iam::637423483309:user/Bahr-jinkins"
+      },
+      Action = "sts:AssumeRole"
+    }]
+  })
+
+  tags = {
+    Name = "TeamTwoEksAccessRole"
+  }
+}
+
+# Attach necessary policies to the IAM Role
+resource "aws_iam_role_policy_attachment" "eks_access_policy" {
+  role       = aws_iam_role.eks_access_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
+  role       = aws_iam_role.eks_access_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
+  role       = aws_iam_role.eks_access_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSCNIPolicy"
+}
+
 # IAM policy for EBS CSI
 data "aws_iam_policy" "ebs_csi_policy" {
   arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
 }
-
+  
 # IAM role for EBS CSI with IRSA
 module "irsa-ebs-csi" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
@@ -175,4 +208,26 @@ module "irsa-ebs-csi" {
   provider_url                  = module.eks.oidc_provider
   role_policy_arns              = [data.aws_iam_policy.ebs_csi_policy.arn]
   oidc_fully_qualified_subjects = ["system:serviceaccount:kube-system:ebs-csi-controller-sa"]
+}
+
+# IAM policy allowing Bahr-jinkins to assume the EKS Access Role
+resource "aws_iam_policy" "allow_assume_role" {
+  name        = "AllowAssumeTeamTwoEksAccessRole"
+  description = "Policy to allow Bahr-jinkins to assume the TeamTwoEksAccessRole"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = "sts:AssumeRole",
+        Resource = "arn:aws:iam::637423483309:role/TeamTwoEksAccessRole"
+      }
+    ]
+  })
+}
+
+# Attach the assume role policy to the user Bahr-jinkins
+resource "aws_iam_user_policy_attachment" "attach_assume_role_policy" {
+  user       = "Bahr-jinkins"
+  policy_arn = aws_iam_policy.allow_assume_role.arn
 }
