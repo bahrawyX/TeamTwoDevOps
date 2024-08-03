@@ -11,7 +11,7 @@ data "aws_availability_zones" "available" {
 }
 
 resource "random_string" "suffix" {
-  length  = 8
+  length  = 3
   special = false
 }
 

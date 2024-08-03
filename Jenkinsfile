@@ -57,43 +57,26 @@ pipeline {
             }
         }
 
-        // stage('Terraform Import Existing Resources') {
-        //     steps {
-        //         script {
-        //             // Bash script to import existing resources
-        //             dir("${env.TERRAFORM_CONFIG_PATH}") {
-        //                 bat """
-        //                 #!/bin/bash
+        stage('Terraform Import Existing Resources') {
+            steps {
+                script {
+                    // Import existing resources automatically using AWS CLI
+                    dir("${env.TERRAFORM_CONFIG_PATH}") {
+                        withAWS(credentials: "${AWS_CREDENTIALS}", region: 'us-east-1') {
+                            bat """
+                            #!/bin/bash
 
-        //                 # Define the resources and their identifiers
-        //                 declare -A resources=(
-        //                   ["aws_security_group.teamtwo_sg"]="sg-0123456789abcdef0"  # Replace with your actual Security Group ID
-        //                   ["aws_lb.teamtwo_alb"]="arn:aws:elasticloadbalancing:<region>:<account-id>:loadbalancer/app/TeamTwo-ALB/0123456789abcdef"  # Replace with your actual ALB ARN
-        //                   ["aws_lb_target_group.teamtwo_tg"]="arn:aws:elasticloadbalancing:<region>:<account-id>:targetgroup/TeamTwo-TG/0123456789abcdef"  # Replace with your actual Target Group ARN
-        //                   ["aws_iam_role.eks_access_role"]="TeamTwoEksAccessRole"  # Replace with your actual IAM Role name
-        //                   ["aws_iam_role.eks_worker_role"]="TeamTwoEksWorkerRole"  # Replace with your actual IAM Worker Role name
-        //                 )
+                            # Import existing ALB
+                            terraform import aws_lb.teamtwo_alb arn:aws:elasticloadbalancing:region:account-id:loadbalancer/app/TeamTwo-ALB/0123456789abcdef || echo "ALB already imported or does not exist."
 
-        //                 # Loop through the resources and attempt to import each one
-        //                 for resource in "${!resources[@]}"; do
-        //                   identifier=${resources[$resource]}
-        //                   echo "Attempting to import resource: $resource with identifier: $identifier"
-                          
-        //                   # Attempt to import the resource
-        //                   terraform import $resource $identifier
-
-        //                   # Check if the import was successful
-        //                   if [ $? -eq 0 ]; then
-        //                     echo "Successfully imported $resource"
-        //                   else
-        //                     echo "Failed to import $resource. Continuing..."
-        //                   fi
-        //                 done
-        //                 """
-        //             }
-        //         }
-        //     }
-        // }
+                            # Import existing NAT Gateway
+                            terraform import aws_nat_gateway.teamtwo_nat nat-0123456789abcdef0 || echo "NAT Gateway already imported or does not exist."
+                            """
+                        }
+                    }
+                }
+            }
+        }
 
         stage('Terraform Plan') {
             steps {
@@ -118,52 +101,47 @@ pipeline {
         }
 
         stage('Verify Kubeconfig Path') {
-             steps {
-                 script {
-                     echo "KUBECONFIG path is set to: ${env.KUBECONFIG_PATH}"
-                     bat "kubectl config view --kubeconfig ${KUBECONFIG_PATH}"
-                 }
-             }
-         }
-         
-
-         stage('Update Kubeconfig') {
-           steps {
+            steps {
                 script {
-                     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "${AWS_CREDENTIALS}"]]) {
+                    echo "KUBECONFIG path is set to: ${env.KUBECONFIG_PATH}"
+                    bat "kubectl config view --kubeconfig ${KUBECONFIG_PATH}"
+                }
+            }
+        }
+         
+        stage('Update Kubeconfig') {
+            steps {
+                script {
+                    withAWS(credentials: "${AWS_CREDENTIALS}", region: 'us-east-1') {
                         bat """
-                            aws eks --region %AWS_DEFAULT_REGION% update-kubeconfig --name TeamTwoCluster-${env.BUILD_NUMBER} --kubeconfig ${KUBECONFIG_PATH}
+                        aws eks --region %AWS_DEFAULT_REGION% update-kubeconfig --name TeamTwoCluster-${env.BUILD_NUMBER} --kubeconfig ${KUBECONFIG_PATH}
                          """
                     }
                 }
             }
-         }
+        }
 
-         stage('Deploy Kubernetes Resources') {
-             steps {
-                 script {
-                     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "${AWS_CREDENTIALS}"]]) {
-                         bat """
-                         kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\pv.yaml
-                         kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\pvc.yaml
-                         kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\deployment.yaml
-                         kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\service.yaml
-                         """
+        stage('Deploy Kubernetes Resources') {
+            steps {
+                script {
+                    withAWS(credentials: "${AWS_CREDENTIALS}", region: 'us-east-1') {
+                        bat """
+                        kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\pv.yaml
+                        kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\pvc.yaml
+                        kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\deployment.yaml
+                        kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\service.yaml
+                        """
                     }
-                 }
-             }
-         }
+                }
+            }
+        }
 
-      
-         stage('Deploy Ingress') {
+        stage('Deploy Ingress') {
             steps {
                 sh 'kubectl apply -f ingress.yaml'
             }
         }
-
-     }
-
-
+    }
 
     post {
         always {
