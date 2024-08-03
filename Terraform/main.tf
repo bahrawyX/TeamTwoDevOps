@@ -16,12 +16,12 @@ resource "random_string" "suffix" {
 }
 
 locals {
-  cluster_name = "TeamTwoCluster"
+  cluster_name = "TeamTwoCluster1"  # Adding '1' to avoid conflicts
 }
 
 # Security group for TeamTwo EKS cluster, with enhanced rules
 resource "aws_security_group" "teamtwo_sg" {
-  name        = "TeamTwo-SG"
+  name        = "TeamTwo-SG1"  # Adding '1' to avoid conflicts
   description = "Security Group for TeamTwo Cluster"
   vpc_id      = module.vpc.vpc_id  
 
@@ -48,7 +48,7 @@ resource "aws_security_group" "teamtwo_sg" {
   }
 
   tags = {
-    Name = "TeamTwo-SG"
+    Name = "TeamTwo-SG1"  # Adding '1' to avoid conflicts
   }
 }
 
@@ -57,7 +57,7 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.8.1"
 
-  name = "TeamTwoVPC"
+  name = "TeamTwoVPC1"  # Adding '1' to avoid conflicts
 
   cidr = "10.0.0.0/16"
   azs  = slice(data.aws_availability_zones.available.names, 0, 3)
@@ -109,9 +109,8 @@ module "eks" {
 }
 
 # Application Load Balancer (ALB) setup in the public subnet
-# Application Load Balancer (ALB) setup in the public subnet
 resource "aws_lb" "teamtwo_alb" {
-  name               = "TeamTwo-ALB"  # Unique name to avoid conflicts
+  name               = "TeamTwo-ALB1"  # Adding '1' to avoid conflicts
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.teamtwo_sg.id]
@@ -120,20 +119,19 @@ resource "aws_lb" "teamtwo_alb" {
   enable_deletion_protection = false
 
   tags = {
-    Name = "TeamTwo-ALB"
+    Name = "TeamTwo-ALB1"  # Adding '1' to avoid conflicts
   }
 }
 
 # Target Group for routing traffic to EKS
 resource "aws_lb_target_group" "teamtwo_tg" {
-  name     = "TeamTwo-TG"  
+  name     = "TeamTwo-TG1"  # Adding '1' to avoid conflicts
   port     = 80
   protocol = "HTTP"
   vpc_id   = module.vpc.vpc_id
 
-
   tags = {
-    Name = "TeamTwo-TG"
+    Name = "TeamTwo-TG1"  # Adding '1' to avoid conflicts
   }
 }
 
@@ -151,7 +149,7 @@ resource "aws_lb_listener" "teamtwo_listener" {
 
 # IAM Role for EKS Cluster Access
 resource "aws_iam_role" "eks_access_role" {
-  name = "TeamTwoEksAccessRole"
+  name = "TeamTwoEksAccessRole1"  # Adding '1' to avoid conflicts
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -167,12 +165,11 @@ resource "aws_iam_role" "eks_access_role" {
   })
 
   tags = {
-    Name = "TeamTwoEksAccessRole"
+    Name = "TeamTwoEksAccessRole1"  # Adding '1' to avoid conflicts
   }
 }
 
-
-#IAM policy for EKS cluster
+# IAM policies for EKS cluster
 resource "aws_iam_role_policy_attachment" "eks_cluster_policy_attachment" {
   role       = aws_iam_role.eks_access_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
@@ -193,10 +190,9 @@ resource "aws_iam_role_policy_attachment" "eks_admin_access" {
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
 
-
-#worker node role
+# IAM Role for EKS Worker Nodes
 resource "aws_iam_role" "eks_worker_role" {
-  name = "TeamTwoEksWorkerRole"
+  name = "TeamTwoEksWorkerRole1"  # Adding '1' to avoid conflicts
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -210,11 +206,11 @@ resource "aws_iam_role" "eks_worker_role" {
   })
 
   tags = {
-    Name = "TeamTwoEksWorkerRole"
+    Name = "TeamTwoEksWorkerRole1"  # Adding '1' to avoid conflicts
   }
 }
 
-#worker node policies
+# IAM policies for EKS Worker Nodes
 resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
   role       = aws_iam_role.eks_worker_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
