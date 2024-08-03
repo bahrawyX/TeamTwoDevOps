@@ -79,32 +79,32 @@ pipeline {
             }
         }
 
-    //     stage('Update Kubeconfig') {
-    //         steps {
-    //             script {
-    //                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "${AWS_CREDENTIALS}"]]) {
-    //                     bat """
-    //                     aws eks --region %AWS_DEFAULT_REGION% update-kubeconfig --name TeamTwoCluster-${env.BUILD_NUMBER} --kubeconfig ${KUBECONFIG_PATH}
-    //                     """
-    //                 }
-    //             }
-    //         }
-    //     }
+        // stage('Update Kubeconfig') {
+        //     steps {
+        //         script {
+        //             withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "${AWS_CREDENTIALS}"]]) {
+        //                 bat """
+        //                 aws eks --region %AWS_DEFAULT_REGION% update-kubeconfig --name TeamTwoCluster-${env.BUILD_NUMBER} --kubeconfig ${KUBECONFIG_PATH}
+        //                 """
+        //             }
+        //         }
+        //     }
+        // }
 
-    //     stage('Deploy Kubernetes Resources') {
-    //         steps {
-    //             script {
-    //                 withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "${AWS_CREDENTIALS}"]]) {
-    //                     bat """
-    //                     kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\pv.yaml
-    //                     kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\pvc.yaml
-    //                     kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\deployment.yaml
-    //                     kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\service.yaml
-    //                     """
-    //                 }
-    //             }
-    //         }
-    //     }
+        // stage('Deploy Kubernetes Resources') {
+        //     steps {
+        //         script {
+        //             withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "${AWS_CREDENTIALS}"]]) {
+        //                 bat """
+        //                 kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\pv.yaml
+        //                 kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\pvc.yaml
+        //                 kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\deployment.yaml
+        //                 kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\service.yaml
+        //                 """
+        //             }
+        //         }
+        //     }
+        // }
 
     //     stage('Verify Kubeconfig Path') {
     //         steps {
@@ -114,7 +114,7 @@ pipeline {
     //             }
     //         }
     //     }
-    // }
+     }
 
     post {
         always {
