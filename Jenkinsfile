@@ -2,17 +2,20 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = ""
-        DOCKER_REGISTRY = "your-docker-registry-url"
-        GIT_REPO = "https://github.com/your-github-username/your-repo.git"
-        TERRAFORM_DIR = "terraform-directory"
+        DOCKER_IMAGE = "xbahrawy/finalproject"
+        TERRAFORM_DIR = "${terraform}"
+        AWS_DIR = "${aws}"
+        KUBECTL_DIR = "${kubectl}"
+        DOCKER_CREDENTIALS = '135feaae-4bb5-4233-8869-4cf8939df9ed'
+        AWS_CREDENTIALS = 'fd08b267-20f1-422b-b2cf-a2f446f18839'
+        TERRAFORM_CONFIG_PATH = "${env.WORKSPACE}\terraform"    
     }
 
+
     stages {
-        stage('Checkout') {
+        stage('Clonning Git Repository') {
             steps {
-                // Clone the Git repository
-                git branch: 'main', url: "${GIT_REPO}"
+                echo" Clonning the Git repository"
             }
         }
 
@@ -28,12 +31,15 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
-                    // Login to Docker registry
-                    withCredentials([usernamePassword(credentialsId: 'docker-credentials-id', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh "echo ${DOCKER_PASS} | docker login ${DOCKER_REGISTRY} -u ${DOCKER_USER} --password-stdin"
-                    }
-                    // Push the Docker image to the registry
-                    docker.image("${DOCKER_IMAGE}").push('latest')
+                    echo "Pushing Docker image ${DOCKER_IMAGE}:${env.BUILD_NUMBER} to Docker Hub"
+                    withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS}", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                        bat """
+                        echo Logging into Docker Hub...
+                        docker login -u %DOCKER_USERNAME% -p %DOCKER_PASSWORD%
+                        docker tag ${DOCKER_IMAGE}:${env.BUILD_NUMBER} ${DOCKER_IMAGE}:latest
+                        docker push ${DOCKER_IMAGE}:${env.BUILD_NUMBER}
+                        """
+                    }                            
                 }
             }
         }
@@ -43,7 +49,10 @@ pipeline {
                 dir("${TERRAFORM_DIR}") {
                     script {
                         // Initialize Terraform
-                        sh 'terraform init'
+                        dir("${env.TERRAFORM_CONFIG_PATH}") {
+                        bat""""${env.TERRAFORM_DIR}" init"""
+
+                     }
                     }
                 }
             }
@@ -54,7 +63,11 @@ pipeline {
                 dir("${TERRAFORM_DIR}") {
                     script {
                         // Generate and show the Terraform execution plan
-                        sh 'terraform plan'
+                        dir("${env.TERRAFORM_CONFIG_PATH}") {
+                            bat""""${env.TERRAFORM_DIR}" plan"""
+
+                        }
+                        
                     }
                 }
             }
@@ -65,7 +78,7 @@ pipeline {
                 dir("${TERRAFORM_DIR}") {
                     script {
                         // Apply the Terraform plan to deploy the infrastructure
-                        sh 'terraform apply -auto-approve'
+                        bat """"${env.TERRAFORM_DIR}" apply -auto-approve"""
                     }
                 }
             }
