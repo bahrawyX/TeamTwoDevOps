@@ -16,7 +16,7 @@ resource "random_string" "suffix" {
 }
 
 locals {
-  cluster_name = "TeamTwoCluster-${random_string.suffix.result}"
+  cluster_name = "TeamTwoCluster"
 }
 
 # Security group for TeamTwo EKS cluster, with enhanced rules
@@ -111,7 +111,7 @@ module "eks" {
 # Application Load Balancer (ALB) setup in the public subnet
 # Application Load Balancer (ALB) setup in the public subnet
 resource "aws_lb" "teamtwo_alb" {
-  name               = "TeamTwo-ALB-${random_string.suffix.result}"  # Unique name to avoid conflicts
+  name               = "TeamTwo-ALB"  # Unique name to avoid conflicts
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.teamtwo_sg.id]
@@ -120,30 +120,20 @@ resource "aws_lb" "teamtwo_alb" {
   enable_deletion_protection = false
 
   tags = {
-    Name = "TeamTwo-ALB-${random_string.suffix.result}"
+    Name = "TeamTwo-ALB"
   }
 }
 
 # Target Group for routing traffic to EKS
 resource "aws_lb_target_group" "teamtwo_tg" {
-  name     = "TeamTwo-TG-${random_string.suffix.result}"  # Unique name to avoid conflicts
+  name     = "TeamTwo-TG"  # Unique name to avoid conflicts
   port     = 80
   protocol = "HTTP"
   vpc_id   = module.vpc.vpc_id
 
-  health_check {
-    enabled             = true
-    interval            = 30
-    path                = "/"  # Adjust this path to a specific health check endpoint if available
-    protocol            = "HTTP"
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    timeout             = 5
-    matcher             = "200"
-  }
 
   tags = {
-    Name = "TeamTwo-TG-${random_string.suffix.result}"
+    Name = "TeamTwo-TG"
   }
 }
 
