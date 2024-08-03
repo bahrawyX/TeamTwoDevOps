@@ -49,7 +49,6 @@ pipeline {
 
         stage('Terraform Init') {
             steps {
-                dir("${TERRAFORM_DIR}") {
                     script {
                         // Initialize Terraform
                         dir("${env.TERRAFORM_CONFIG_PATH}") {
@@ -57,13 +56,11 @@ pipeline {
 
                      }
                     }
-                }
             }
         }
 
         stage('Terraform Plan') {
             steps {
-                dir("${TERRAFORM_DIR}") {
                     script {
                         // Generate and show the Terraform execution plan
                         dir("${env.TERRAFORM_CONFIG_PATH}") {
@@ -72,18 +69,17 @@ pipeline {
                         }
                         
                     }
-                }
             }
         }
 
         stage('Terraform Apply') {
             steps {
-                dir("${TERRAFORM_DIR}") {
                     script {
                         // Apply the Terraform plan to deploy the infrastructure
-                        bat """"${env.TERRAFORM_DIR}" apply -auto-approve"""
+                         dir("${env.TERRAFORM_CONFIG_PATH}") {
+                             bat """ "${env.TERRAFORM_DIR}" apply -auto-approve"""
+                        }
                     }
-                }
             }
         }
     }
