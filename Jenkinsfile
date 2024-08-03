@@ -20,14 +20,14 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    // Build the Docker image with build number as tag
-                    docker.build("${DOCKER_IMAGE}:${env.BUILD_NUMBER}")
-                }
-            }
-        }
+        // stage('Build Docker Image') {
+        //     steps {
+        //         script {
+        //             // Build the Docker image with build number as tag
+        //             docker.build("${DOCKER_IMAGE}:${env.BUILD_NUMBER}")
+        //         }
+        //     }
+        // }
 
         stage('Push Docker Image') {
             steps {
