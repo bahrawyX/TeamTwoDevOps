@@ -33,6 +33,7 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
+                    echo "Pushing Docker image ${DOCKER_IMAGE}:${env.BUILD_NUMBER} to Docker Hub"
                     withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS}", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                         bat """
                         echo Logging into Docker Hub...
