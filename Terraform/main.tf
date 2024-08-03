@@ -16,13 +16,13 @@ resource "random_string" "suffix" {
 }
 
 locals {
-  cluster_name = "TeamTwoCluster1"
+  cluster_name = "teamtwo3-cluster"
 }
 
 # Security group for TeamTwo EKS cluster, with enhanced rules
-resource "aws_security_group" "teamtwo_sg" {
-  name        = "TeamTwo-SG1"
-  description = "Security Group for TeamTwo Cluster"
+resource "aws_security_group" "teamtwo3_sg" {
+  name        = "teamtwo3-sg"
+  description = "Security Group for teamtwo3 Cluster"
   vpc_id      = module.vpc.vpc_id  
 
   ingress {
@@ -48,7 +48,7 @@ resource "aws_security_group" "teamtwo_sg" {
   }
 
   tags = {
-    Name = "TeamTwo-SG1"
+    Name = "teamtwo3-sg"
   }
 }
 
@@ -57,7 +57,7 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.8.1"
 
-  name = "TeamTwoVPC1"
+  name = "teamtwo3-vpc"
 
   cidr = "10.0.0.0/16"
   azs  = slice(data.aws_availability_zones.available.names, 0, 3)
@@ -86,9 +86,6 @@ module "eks" {
   cluster_name    = local.cluster_name
   cluster_version = "1.29"
 
-  cluster_endpoint_public_access           = true
-  enable_cluster_creator_admin_permissions = true
-
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
 
@@ -98,23 +95,22 @@ module "eks" {
 
   eks_managed_node_groups = {
     one = {
-      name                 = "TeamTwoNodeGroup1"
+      name                 = "teamtwo3-node-group"
       instance_types       = ["t3.micro"]
       min_size             = 1
       max_size             = 3
       desired_size         = 2
-      vpc_security_group_ids = [aws_security_group.teamtwo_sg.id]
+      vpc_security_group_ids = [aws_security_group.teamtwo3_sg.id]
     }
   }
 
-  # Do not include any KMS-related variables
 }
 
 
 
 # IAM Role for EKS Cluster Access
 resource "aws_iam_role" "eks_access_role" {
-  name = "TeamTwoEksAccessRole1"
+  name = "teamtwo3-eks-access-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -130,7 +126,7 @@ resource "aws_iam_role" "eks_access_role" {
   })
 
   tags = {
-    Name = "TeamTwoEksAccessRole1"
+    Name = "teamtwo3-eks-access-role"
   }
 }
 
@@ -157,7 +153,7 @@ resource "aws_iam_role_policy_attachment" "eks_admin_access" {
 
 # IAM Role for EKS Worker Nodes
 resource "aws_iam_role" "eks_worker_role" {
-  name = "TeamTwoEksWorkerRole1"
+  name = "teamtwo3-eks-worker-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -171,7 +167,7 @@ resource "aws_iam_role" "eks_worker_role" {
   })
 
   tags = {
-    Name = "TeamTwoEksWorkerRole1"
+    Name = "teamtwo3-eks-worker-role"
   }
 }
 
