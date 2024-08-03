@@ -79,18 +79,6 @@ pipeline {
             }
         }
 
-        
-          stage('Verify Kubeconfig Path') {
-            steps {
-                script {
-                    echo "KUBECONFIG path is set to: ${env.KUBECONFIG_PATH}"
-                    bat "kubectl config view --kubeconfig ${KUBECONFIG_PATH}"
-                }
-            }
-        }
-    }
-
-
         stage('Update Kubeconfig') {
             steps {
                 script {
@@ -118,7 +106,16 @@ pipeline {
             }
         }
 
-      
+        stage('Verify Kubeconfig Path') {
+            steps {
+                script {
+                    echo "KUBECONFIG path is set to: ${env.KUBECONFIG_PATH}"
+                    bat "kubectl config view --kubeconfig ${KUBECONFIG_PATH}"
+                }
+            }
+        }
+    }
+
     post {
         always {
             // Clean up workspace after build
