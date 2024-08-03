@@ -132,6 +132,14 @@ pipeline {
         always {
             // Clean up workspace after build
             cleanWs()
+             steps { 
+                script {
+                    echo "Pipeline failed. Destroying the infrastructure..."
+                    dir("${env.TERRAFORM_CONFIG_PATH}") {
+                        bat """${env.TERRAFORM_DIR} destroy -auto-approve"""
+                    }
+                }       
+            }
         }
         success {
             echo 'Pipeline completed successfully.'
@@ -143,7 +151,7 @@ pipeline {
                     dir("${env.TERRAFORM_CONFIG_PATH}") {
                         bat """${env.TERRAFORM_DIR} destroy -auto-approve"""
                     }
-                }   
+                }       
             }
         }
     }
