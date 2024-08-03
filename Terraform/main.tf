@@ -106,7 +106,11 @@ module "eks" {
       vpc_security_group_ids = [aws_security_group.teamtwo_sg.id]
     }
   }
+
+  # Do not include any KMS-related variables
 }
+
+
 
 # IAM Role for EKS Cluster Access
 resource "aws_iam_role" "eks_access_role" {
