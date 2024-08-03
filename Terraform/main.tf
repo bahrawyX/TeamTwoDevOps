@@ -177,6 +177,28 @@ resource "aws_lb_target_group" "teamtwo_tg" {
     Name = "TeamTwo-TG"
   }
 }
+# IAM Role for EKS Cluster Access
+resource "aws_iam_role" "eks_access_role" {
+  name = "TeamTwoEksAccessRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "eks.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+
+  tags = {
+    Name = "TeamTwoEksAccessRole"
+  }
+}
+
 
 
 #IAM policy for EKS cluster
