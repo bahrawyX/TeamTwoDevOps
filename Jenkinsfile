@@ -89,33 +89,36 @@ pipeline {
              }
          }
          
-
-         stage('Update Kubeconfig') {
-           steps {
-                script {
-                     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "${AWS_CREDENTIALS}"]]) {
-                        bat """
-                            aws eks --region %AWS_DEFAULT_REGION% update-kubeconfig --name TeamTwoCluster-${env.BUILD_NUMBER} --kubeconfig ${KUBECONFIG_PATH}
-                         """
-                    }
-                }
+        stage('Update Kubeconfig') {
+    steps {
+        script {
+            withCredentials([usernamePassword(credentialsId: 'fd08b267-20f1-422b-b2cf-a2f446f18839', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                bat """
+                    set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%
+                    set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%
+                    aws eks --region %AWS_DEFAULT_REGION% update-kubeconfig --name TeamTwoCluster-${env.BUILD_NUMBER} --kubeconfig ${KUBECONFIG_PATH}
+                """
             }
-         }
+        }
+    }
+}
 
-         stage('Deploy Kubernetes Resources') {
-             steps {
-                 script {
-                     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: "${AWS_CREDENTIALS}"]]) {
-                         bat """
-                         kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\pv.yaml
-                         kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\pvc.yaml
-                         kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\deployment.yaml
-                         kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\service.yaml
-                         """
-                    }
-                 }
-             }
-         }
+stage('Deploy Kubernetes Resources') {
+    steps {
+        script {
+            withCredentials([usernamePassword(credentialsId: 'fd08b267-20f1-422b-b2cf-a2f446f18839', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                bat """
+                set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%
+                set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%
+                kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\pv.yaml
+                kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\pvc.yaml
+                kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\deployment.yaml
+                kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\service.yaml
+                """
+            }
+        }
+    }
+}
 
       
          stage('Deploy Ingress') {
