@@ -92,23 +92,21 @@ module "eks" {
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
-  
+
   eks_managed_node_group_defaults = {
-    ami_type = "AL2_x86_64",
-    iam_role_use_name_prefix = false
+    ami_type = "AL2_x86_64"
   }
 
   eks_managed_node_groups = {
     one = {
-      name                 = "TTNodeGroup1"
+      name                 = "TeamTwoNodeGroup1"
       instance_types       = ["t3.micro"]
       min_size             = 1
       max_size             = 3
       desired_size         = 2
       vpc_security_group_ids = [aws_security_group.teamtwo_sg.id]
-      iam_role_name        = "TTNodeGroupRole"  # Explicitly set a shorter role name
     }
-}
+  }
 }
 # module "eks" {
 #   source  = "terraform-aws-modules/eks/aws"
@@ -270,4 +268,3 @@ resource "aws_iam_role_policy_attachment" "worker_admin_access" {
   role       = aws_iam_role.eks_worker_role.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
-
