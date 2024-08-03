@@ -88,6 +88,7 @@ module "eks" {
 
   cluster_endpoint_public_access           = true
   enable_cluster_creator_admin_permissions = true
+  cluster_endpoint_private_access           = true
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
@@ -107,6 +108,36 @@ module "eks" {
     }
   }
 }
+# module "eks" {
+#   source  = "terraform-aws-modules/eks/aws"
+#   version = "20.8.5"
+
+#   cluster_name    = local.cluster_name
+#   cluster_version = "1.29"
+
+#   cluster_endpoint_public_access           = true
+#   cluster_endpoint_public_access_cidrs     = ["203.0.113.0/24", "198.51.100.0/24"]  // Specify allowed CIDR blocks
+#   cluster_endpoint_private_access          = true
+
+#   vpc_id     = module.vpc.vpc_id
+#   subnet_ids = module.vpc.private_subnets
+
+#   eks_managed_node_group_defaults = {
+#     ami_type = "AL2_x86_64"
+#   }
+
+#   eks_managed_node_groups = {
+#     one = {
+#       name                 = "TeamTwoNodeGroup1"
+#       instance_types       = ["t3.micro"]
+#       min_size             = 1
+#       max_size             = 3
+#       desired_size         = 2
+#       vpc_security_group_ids = [aws_security_group.teamtwo_sg.id]
+#     }
+#   }
+# }
+
 
 # Application Load Balancer (ALB) setup in the public subnet
 resource "aws_lb" "teamtwo_alb" {
@@ -146,88 +177,93 @@ resource "aws_lb_target_group" "teamtwo_tg" {
 }
 
 # Listener for the ALB
-resource "aws_lb_listener" "teamtwo_listener" {
-  load_balancer_arn = aws_lb.teamtwo_alb.arn
-  port              = 80
-  protocol          = "HTTP"
+resource "aws_lb_target_group" "teamtwo_tg" {
+  name     = "TeamTwo-TG"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = module.vpc.vpc_id
 
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.teamtwo_tg.arn
+  health_check {
+    enabled             = true
+    interval            = 30
+    path                = "/health"  // Change this to a specific health check endpoint if available
+    protocol            = "HTTP"
+    healthy_threshold   = 2         // Adjust based on tolerance for intermittent failures
+    unhealthy_threshold = 2          // Adjust based on tolerance for recovery time
+    timeout             = 10         // Consider increasing timeout if the service takes longer to respond
+    matcher             = "200"      // Ensure the endpoint returns HTTP 200 for health
+  }
+
+  tags = {
+    Name = "TeamTwo-TG"
   }
 }
 
-# IAM Role for Bahr-jinkins with EKS Access Permissions
-resource "aws_iam_role" "eks_access_role" {
-  name = "TeamTwoEksAccessRole"
+
+#IAM policy for EKS cluster
+resource "aws_iam_role_policy_attachment" "eks_cluster_policy_attachment" {
+  role       = aws_iam_role.eks_access_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "eks_service_policy_attachment" {
+  role       = aws_iam_role.eks_access_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "eks_vpc_resource_controller" {
+  role       = aws_iam_role.eks_access_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
+}
+
+resource "aws_iam_role_policy_attachment" "eks_admin_access" {
+  role       = aws_iam_role.eks_access_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}
+
+
+#worker node role
+resource "aws_iam_role" "eks_worker_role" {
+  name = "TeamTwoEksWorkerRole"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
       Effect = "Allow",
       Principal = {
-        AWS = "arn:aws:iam::637423483309:user/Bahr-jinkins"
+        Service = "ec2.amazonaws.com"
       },
       Action = "sts:AssumeRole"
     }]
   })
 
   tags = {
-    Name = "TeamTwoEksAccessRole"
+    Name = "TeamTwoEksWorkerRole"
   }
 }
 
-# Attach necessary policies to the IAM Role
-resource "aws_iam_role_policy_attachment" "eks_access_policy" {
-  role       = aws_iam_role.eks_access_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-}
-
+#worker node policies
 resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
-  role       = aws_iam_role.eks_access_role.name
+  role       = aws_iam_role.eks_worker_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
 }
 
 resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
-  role       = aws_iam_role.eks_access_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSCNIPolicy"
+  role       = aws_iam_role.eks_worker_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
 }
 
-# IAM policy for EBS CSI
-data "aws_iam_policy" "ebs_csi_policy" {
-  arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
-}
-  
-# IAM role for EBS CSI with IRSA
-module "irsa-ebs-csi" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-  version = "5.39.0"
-
-  create_role                   = true
-  role_name                     = "TeamTwoAmazonEKSTFEBSCSIRole-${module.eks.cluster_name}"
-  provider_url                  = module.eks.oidc_provider
-  role_policy_arns              = [data.aws_iam_policy.ebs_csi_policy.arn]
-  oidc_fully_qualified_subjects = ["system:serviceaccount:kube-system:ebs-csi-controller-sa"]
+resource "aws_iam_role_policy_attachment" "ecr_read_only" {
+  role       = aws_iam_role.eks_worker_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
-# IAM policy allowing Bahr-jinkins to assume the EKS Access Role
-resource "aws_iam_policy" "allow_assume_role" {
-  name        = "AllowAssumeTeamTwoEksAccessRole"
-  description = "Policy to allow Bahr-jinkins to assume the TeamTwoEksAccessRole"
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Action = "sts:AssumeRole",
-        Resource = "arn:aws:iam::637423483309:role/TeamTwoEksAccessRole"
-      }
-    ]
-  })
+resource "aws_iam_role_policy_attachment" "ec2_full_access" {
+  role       = aws_iam_role.eks_worker_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2FullAccess"
 }
 
-# Attach the assume role policy to the user Bahr-jinkins
-resource "aws_iam_user_policy_attachment" "attach_assume_role_policy" {
-  user       = "Bahr-jinkins"
-  policy_arn = aws_iam_policy.allow_assume_role.arn
+resource "aws_iam_role_policy_attachment" "worker_admin_access" {
+  role       = aws_iam_role.eks_worker_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
