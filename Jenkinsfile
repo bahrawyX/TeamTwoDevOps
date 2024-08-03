@@ -38,7 +38,6 @@ pipeline {
                         echo Logging into Docker Hub...
                         echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin
                         docker tag ${DOCKER_IMAGE}:${env.BUILD_NUMBER} ${DOCKER_IMAGE}:latest
-                        docker push ${DOCKER_IMAGE}:${env.BUILD_NUMBER}
                         docker push ${DOCKER_IMAGE}:latest
                         """
                     }
@@ -133,14 +132,11 @@ stage('Deploy Kubernetes Resources') {
 
     post {
         always {
-            // Clean up workspace after build
-            cleanWs()
+
              steps { 
                 script {
                     echo "Pipeline failed. Destroying the infrastructure..."
-                    dir("${env.TERRAFORM_CONFIG_PATH}") {
-                        bat """${env.TERRAFORM_DIR} destroy -auto-approve"""
-                    }
+                    
                 }       
             }
         }
@@ -151,9 +147,7 @@ stage('Deploy Kubernetes Resources') {
              steps { 
                 script {
                     echo "Pipeline failed. Destroying the infrastructure..."
-                    dir("${env.TERRAFORM_CONFIG_PATH}") {
-                        bat """${env.TERRAFORM_DIR} destroy -auto-approve"""
-                    }
+                    
                 }       
             }
         }
