@@ -21,7 +21,7 @@ locals {
 
 # Security group for TeamTwo EKS cluster, with enhanced rules
 resource "aws_security_group" "teamtwo_sg" {
-  name        = "TeamTwo-SG"
+  name        = "TeamTwo-SG-${random_string.suffix.result}"
   description = "Security Group for TeamTwo Cluster"
   vpc_id      = module.vpc.vpc_id  
 
@@ -48,7 +48,7 @@ resource "aws_security_group" "teamtwo_sg" {
   }
 
   tags = {
-    Name = "TeamTwo-SG"
+    Name = "TeamTwo-SG-${random_string.suffix.result}"
   }
 }
 
@@ -57,7 +57,7 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.8.1"
 
-  name = "TeamTwoVPC"
+  name = "TeamTwoVPC-${random_string.suffix.result}"
 
   cidr = "10.0.0.0/16"
   azs  = slice(data.aws_availability_zones.available.names, 0, 3)
@@ -99,7 +99,7 @@ module "eks" {
 
   eks_managed_node_groups = {
     one = {
-      name                 = "TeamTwoNodeGroup1"
+      name                 = "TeamTwoNodeGroup1-${random_string.suffix.result}"
       instance_types       = ["t3.micro"]
       min_size             = 1
       max_size             = 3
@@ -108,40 +108,10 @@ module "eks" {
     }
   }
 }
-# module "eks" {
-#   source  = "terraform-aws-modules/eks/aws"
-#   version = "20.8.5"
-
-#   cluster_name    = local.cluster_name
-#   cluster_version = "1.29"
-
-#   cluster_endpoint_public_access           = true
-#   cluster_endpoint_public_access_cidrs     = ["203.0.113.0/24", "198.51.100.0/24"]  // Specify allowed CIDR blocks
-#   cluster_endpoint_private_access          = true
-
-#   vpc_id     = module.vpc.vpc_id
-#   subnet_ids = module.vpc.private_subnets
-
-#   eks_managed_node_group_defaults = {
-#     ami_type = "AL2_x86_64"
-#   }
-
-#   eks_managed_node_groups = {
-#     one = {
-#       name                 = "TeamTwoNodeGroup1"
-#       instance_types       = ["t3.micro"]
-#       min_size             = 1
-#       max_size             = 3
-#       desired_size         = 2
-#       vpc_security_group_ids = [aws_security_group.teamtwo_sg.id]
-#     }
-#   }
-# }
-
 
 # Application Load Balancer (ALB) setup in the public subnet
 resource "aws_lb" "teamtwo_alb" {
-  name               = "TeamTwo-ALB"
+  name               = "TeamTwo-ALB-${random_string.suffix.result}"  # Unique name to avoid conflicts
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.teamtwo_sg.id]
@@ -150,14 +120,13 @@ resource "aws_lb" "teamtwo_alb" {
   enable_deletion_protection = false
 
   tags = {
-    Name = "TeamTwo-ALB"
+    Name = "TeamTwo-ALB-${random_string.suffix.result}"
   }
 }
 
-# Target Group for routing traffic to EKS  AKA LOAD BALANCER
-# Listener for the ALB
+# Target Group for routing traffic to EKS
 resource "aws_lb_target_group" "teamtwo_tg" {
-  name     = "TeamTwo-TG"
+  name     = "TeamTwo-TG-${random_string.suffix.result}"  # Unique name to avoid conflicts
   port     = 80
   protocol = "HTTP"
   vpc_id   = module.vpc.vpc_id
@@ -165,21 +134,22 @@ resource "aws_lb_target_group" "teamtwo_tg" {
   health_check {
     enabled             = true
     interval            = 30
-    path                = "/health"  // Change this to a specific health check endpoint if available
+    path                = "/health"  # Change this to a specific health check endpoint if available
     protocol            = "HTTP"
-    healthy_threshold   = 2         // Adjust based on tolerance for intermittent failures
-    unhealthy_threshold = 2          // Adjust based on tolerance for recovery time
-    timeout             = 10         // Consider increasing timeout if the service takes longer to respond
-    matcher             = "200"      // Ensure the endpoint returns HTTP 200 for health
+    healthy_threshold   = 2         # Adjust based on tolerance for intermittent failures
+    unhealthy_threshold = 2          # Adjust based on tolerance for recovery time
+    timeout             = 10         # Consider increasing timeout if the service takes longer to respond
+    matcher             = "200"      # Ensure the endpoint returns HTTP 200 for health
   }
 
   tags = {
-    Name = "TeamTwo-TG"
+    Name = "TeamTwo-TG-${random_string.suffix.result}"
   }
 }
+
 # IAM Role for EKS Cluster Access
 resource "aws_iam_role" "eks_access_role" {
-  name = "TeamTwoEksAccessRole"
+  name = "TeamTwoEksAccessRole-${random_string.suffix.result}"  # Unique name to avoid conflicts
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -195,13 +165,11 @@ resource "aws_iam_role" "eks_access_role" {
   })
 
   tags = {
-    Name = "TeamTwoEksAccessRole"
+    Name = "TeamTwoEksAccessRole-${random_string.suffix.result}"
   }
 }
 
-
-
-#IAM policy for EKS cluster
+# IAM policy for EKS cluster
 resource "aws_iam_role_policy_attachment" "eks_cluster_policy_attachment" {
   role       = aws_iam_role.eks_access_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
@@ -222,10 +190,9 @@ resource "aws_iam_role_policy_attachment" "eks_admin_access" {
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
 
-
-#worker node role
+# Worker node role
 resource "aws_iam_role" "eks_worker_role" {
-  name = "TeamTwoEksWorkerRole"
+  name = "TeamTwoEksWorkerRole-${random_string.suffix.result}"  # Unique name to avoid conflicts
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -239,11 +206,11 @@ resource "aws_iam_role" "eks_worker_role" {
   })
 
   tags = {
-    Name = "TeamTwoEksWorkerRole"
+    Name = "TeamTwoEksWorkerRole-${random_string.suffix.result}"
   }
 }
 
-#worker node policies
+# Worker node policies
 resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
   role       = aws_iam_role.eks_worker_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
