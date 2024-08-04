@@ -6,7 +6,7 @@ pipeline {
         TERRAFORM_DIR = "${terraform}"
         AWS_DIR = "${aws}"
         KUBECTL_DIR = "${kubectl}"
-        DOCKER_CREDENTIALS = 'DockerCreds'
+        DOCKER_CREDENTIALS = '135feaae-4bb5-4233-8869-4cf8939df9ed'
         AWS_CREDENTIALS = 'fd08b267-20f1-422b-b2cf-a2f446f18839'
         TERRAFORM_CONFIG_PATH = "${env.WORKSPACE}\\terraform"
         KUBECONFIG_PATH = "${env.WORKSPACE}\\kubeconfig"
@@ -33,7 +33,7 @@ pipeline {
             steps {
                 script {
                     echo "Pushing Docker image ${DOCKER_IMAGE}:${env.BUILD_NUMBER} to Docker Hub"
-                    withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS}", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                    withCredentials([usernamePassword(credentialsId: "DockerCreds", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                         bat """
                         echo Logging into Docker Hub...
                         echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin
