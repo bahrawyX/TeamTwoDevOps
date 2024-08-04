@@ -95,9 +95,9 @@ pipeline {
                     bat """
                     set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%
                     set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%
-                    set AWS_DEFAULT_REGION= eu-west-3
+                    set AWS_DEFAULT_REGION= us-east-2
                     
-                    aws eks --region %AWS_DEFAULT_REGION% update-kubeconfig --name teamtwo3-cluster --kubeconfig C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\TeamTwoFinalProjectPipeLine\\kubeconfig
+                    aws eks --region %AWS_DEFAULT_REGION% update-kubeconfig --name team2_test-cluster --kubeconfig C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\TeamTwoFinalProjectPipeLine\\kubeconfig
                     """
             }
         }
