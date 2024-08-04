@@ -9,5 +9,5 @@ spec:
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: /mn/data
+    path: /app/data
   storageClassName: manual

@@ -1,10 +1,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: lms-app-ingress
+  name: team-two-app-ingress
   namespace: teamtwo-namespace
 spec:
-  ingressClassName: nginx  # Replace the annotation with this field
+  ingressClassName: nginx  
   rules:
   - host: lms-app.example.com
     http:
@@ -19,4 +19,3 @@ spec:
   tls:
   - hosts:
     - lms-app.example.com
-    secretName: tls-secret

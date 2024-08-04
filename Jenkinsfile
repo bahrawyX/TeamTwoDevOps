@@ -88,32 +88,32 @@ pipeline {
              }
          }
          
-        stage('Update Kubeconfig') {
-    steps {
-        script {
-            withCredentials([usernamePassword(credentialsId: 'fd08b267-20f1-422b-b2cf-a2f446f18839', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                    bat """
-                    set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%
-                    set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%
-                    set AWS_DEFAULT_REGION= us-east-2
-                    
-                    aws eks --region %AWS_DEFAULT_REGION% update-kubeconfig --name team2_cluster --kubeconfig C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\TeamTwoFinalProjectPipeLine\\kubeconfig
-                    """
+            stage('Update Kubeconfig') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'fd08b267-20f1-422b-b2cf-a2f446f18839', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                            bat """
+                            set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%
+                            set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%
+                            set AWS_DEFAULT_REGION= us-east-2
+                            
+                            aws eks --region %AWS_DEFAULT_REGION% update-kubeconfig --name team2_cluster --kubeconfig C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\TeamTwoFinalProjectPipeLine\\kubeconfig
+                            """
+                    }
+                }
             }
         }
-    }
-}
 
-    stage('Deploy Kubernetes Resources') {
+stage('Deploy Kubernetes Resources') {
         steps {
             script {
                 withCredentials([usernamePassword(credentialsId: 'fd08b267-20f1-422b-b2cf-a2f446f18839', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                     bat """
                     set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%
                     set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%
-                    kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\namespace.yaml
-                    kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\pv.yaml
-                    kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\pvc.yaml
+                    
+                    bash ${env.WORKSPACE}\\k8s\\update_image_tag.sh ${env.WORKSPACE}\\k8s\\deployment.yaml ${env.BUILD_NUMBER}
+                    
                     kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\deployment.yaml
                     kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\service.yaml
                     """
@@ -121,8 +121,9 @@ pipeline {
             }
         }
     }
-
-
+                // kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\namespace.yaml
+                    //  kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\pv.yaml
+                    // kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\pvc.yaml
       
          stage('Deploy Ingress') {
             steps {
