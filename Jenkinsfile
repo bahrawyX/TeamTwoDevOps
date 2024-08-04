@@ -20,30 +20,30 @@ pipeline {
             }
         }
 
-        // stage('Build Docker Image') {
-        //     steps {
-        //         script {
-        //             // Build the Docker image with build number as tag
-        //             docker.build("${DOCKER_IMAGE}:${env.BUILD_NUMBER}")
-        //         }
-        //     }
-        // }
-
-        stage('Push Docker Image') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    echo "Pushing Docker image ${DOCKER_IMAGE}:${env.BUILD_NUMBER} to Docker Hub"
-                    withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS}", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                        bat """
-                        echo Logging into Docker Hub...
-                        echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin
-                        docker tag ${DOCKER_IMAGE}:${env.BUILD_NUMBER} ${DOCKER_IMAGE}:latest
-                        docker push ${DOCKER_IMAGE}:latest
-                        """
-                    }
+                    // Build the Docker image with build number as tag
+                    docker.build("${DOCKER_IMAGE}:${env.BUILD_NUMBER}")
                 }
             }
         }
+
+        // stage('Push Docker Image') {
+        //     steps {
+        //         script {
+        //             echo "Pushing Docker image ${DOCKER_IMAGE}:${env.BUILD_NUMBER} to Docker Hub"
+        //             withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS}", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+        //                 bat """
+        //                 echo Logging into Docker Hub...
+        //                 echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin
+        //                 docker tag ${DOCKER_IMAGE}:${env.BUILD_NUMBER} ${DOCKER_IMAGE}:latest
+        //                 docker push ${DOCKER_IMAGE}:latest
+        //                 """
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('Terraform Init') {
             steps {
@@ -92,11 +92,13 @@ pipeline {
     steps {
         script {
             withCredentials([usernamePassword(credentialsId: 'fd08b267-20f1-422b-b2cf-a2f446f18839', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                bat """
+                    bat """
                     set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%
                     set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%
-                    aws eks --region %AWS_DEFAULT_REGION% update-kubeconfig --name TeamTwoCluster-${env.BUILD_NUMBER} --kubeconfig ${KUBECONFIG_PATH}
-                """
+                    set AWS_DEFAULT_REGION= eu-west-3
+                    
+                    aws eks --region %AWS_DEFAULT_REGION% update-kubeconfig --name teamtwo3-cluster --kubeconfig C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\TeamTwoFinalProjectPipeLine\\kubeconfig
+                    """
             }
         }
     }

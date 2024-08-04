@@ -19,6 +19,16 @@ locals {
   cluster_name = "teamtwo3-cluster"
 }
 
+terraform {
+  backend "s3" {
+    bucket         = "teamtwobucket"
+    key            = "./terraform.tfstate"  # You can set this to where you want to store the state file within the bucket
+    region         =  var.region
+    encrypt        = true                              # Encrypts the state file at rest
+    dynamodb_table = "teamtwotable"                 # Optional: For   locking
+  }
+}
+
 # Security group for TeamTwo EKS cluster, with enhanced rules
 resource "aws_security_group" "teamtwo3_sg" {
   name        = "teamtwo3-sg"
