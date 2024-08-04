@@ -29,22 +29,24 @@ pipeline {
         //     }
         // }
 
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    echo "Pushing Docker image ${DOCKER_IMAGE}:${env.BUILD_NUMBER} to Docker Hub"
-                    withCredentials([usernamePassword(credentialsId: "DockerCreds", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                        bat """
-                        echo Logging into Docker Hub...
-                        echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin
-                        docker tag ${DOCKER_IMAGE}:${env.BUILD_NUMBER} ${DOCKER_IMAGE}:latest
-                        docker push ${DOCKER_IMAGE}:latest
-                        """
+            stage('Push Docker Image') {
+                steps {
+                    script {
+                        echo "Pushing Docker image ${DOCKER_IMAGE}:${env.BUILD_NUMBER} to Docker Hub"
+                        withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS}", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                            bat """
+                            echo Logging into Docker Hub...
+                            echo %DOCKER_PASSWORD% | docker login -u %DOCKER_USERNAME% --password-stdin
+                            
+                            docker push ${DOCKER_IMAGE}:${env.BUILD_NUMBER}
+                            
+                            docker tag ${DOCKER_IMAGE}:${env.BUILD_NUMBER} ${DOCKER_IMAGE}:latest
+                            docker push ${DOCKER_IMAGE}:latest
+                            """
+                        }
                     }
                 }
             }
-        }
-
         stage('Terraform Init') {
             steps {
                 script {
