@@ -3,9 +3,9 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "xbahrawy/finalproject"
-        TERRAFORM_DIR = "${terraform}"
-        AWS_DIR = "${aws}"
-        KUBECTL_DIR = "${kubectl}"
+        TERRAFORM_DIR = "${terraform}" // Make sure this variable is defined
+        AWS_DIR = "${aws}"             // Make sure this variable is defined
+        KUBECTL_DIR = "${kubectl}"     // Make sure this variable is defined
         DOCKER_CREDENTIALS = '135feaae-4bb5-4233-8869-4cf8939df9ed'
         AWS_CREDENTIALS = 'fd08b267-20f1-422b-b2cf-a2f446f18839'
         TERRAFORM_CONFIG_PATH = "${env.WORKSPACE}\\terraform"
@@ -25,25 +25,26 @@ pipeline {
                 script {
                     // Build the Docker image with build number as tag
                     docker.build("${DOCKER_IMAGE}:${env.BUILD_NUMBER}")
-                }1
+                }
             }
         }
-                stage('Push Docker Image to Docker Hub') {
-                    steps {
-                        script {
-                            echo "Pushing Docker image ${DOCKER_IMAGE}:${env.BUILD_NUMBER} to Docker Hub"
-                            withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS}", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                                bat """
-                                echo Logging into Docker Hub...
-                                docker login -u %DOCKER_USERNAME% -p %DOCKER_PASSWORD%
-                                docker tag ${DOCKER_IMAGE}:${env.BUILD_NUMBER} ${DOCKER_IMAGE}:latest
-                                docker push ${DOCKER_IMAGE}:${env.BUILD_NUMBER}
-                                docker push ${DOCKER_IMAGE}:latest
-                                """
-                            }                            
-                        }
-                    }
+
+        stage('Push Docker Image to Docker Hub') {
+            steps {
+                script {
+                    echo "Pushing Docker image ${DOCKER_IMAGE}:${env.BUILD_NUMBER} to Docker Hub"
+                    withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS}", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                        bat """
+                        echo Logging into Docker Hub...
+                        docker login -u %DOCKER_USERNAME% -p %DOCKER_PASSWORD%
+                        docker tag ${DOCKER_IMAGE}:${env.BUILD_NUMBER} ${DOCKER_IMAGE}:latest
+                        docker push ${DOCKER_IMAGE}:${env.BUILD_NUMBER}
+                        docker push ${DOCKER_IMAGE}:latest
+                        """
+                    }                            
                 }
+            }
+        }
 
         stage('Terraform Init') {
             steps {
@@ -56,7 +57,6 @@ pipeline {
             }
         }
 
-
         stage('Terraform Plan') {
             steps { 
                 script {
@@ -68,6 +68,7 @@ pipeline {
             }
         }
 
+        // Uncomment when ready to apply the Terraform plan
         // stage('Terraform Apply') {
         //     steps {
         //         script {
@@ -87,68 +88,52 @@ pipeline {
                  }
              }
          }
-         
-            stage('Update Kubeconfig') {
+
+        stage('Update Kubeconfig') {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'fd08b267-20f1-422b-b2cf-a2f446f18839', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                            bat """
-                            set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%
-                            set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%
-                            set AWS_DEFAULT_REGION= us-east-2
-                            
-                            aws eks --region %AWS_DEFAULT_REGION% update-kubeconfig --name team2_cluster --kubeconfig C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\TeamTwoFinalProjectPipeLine\\kubeconfig
-                            """
+                        bat """
+                        set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%
+                        set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%
+                        set AWS_DEFAULT_REGION= us-east-2
+                        
+                        aws eks --region %AWS_DEFAULT_REGION% update-kubeconfig --name team2_cluster --kubeconfig C:\\ProgramData\\Jenkins\\.jenkins\\workspace\\TeamTwoFinalProjectPipeLine\\kubeconfig
+                        """
                     }
                 }
             }
         }
 
-stage('Deploy Kubernetes Resources') {
-        steps {
-            script {
-                withCredentials([usernamePassword(credentialsId: 'fd08b267-20f1-422b-b2cf-a2f446f18839', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                    bat """
-                    set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%
-                    set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%
-                    
-                    kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\namespace.yaml
-                    kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\pv.yaml
-                    kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\pvc.yaml
-                    kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\deployment.yaml
-                    kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\service.yaml
-                    """
+        stage('Deploy Kubernetes Resources') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'fd08b267-20f1-422b-b2cf-a2f446f18839', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        bat """
+                        set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%
+                        set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%
+                        
+                        kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\namespace.yaml
+                        kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\pv.yaml
+                        kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\pvc.yaml
+                        kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\deployment.yaml
+                        kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\service.yaml
+                        """
+                    }
                 }
             }
         }
     }
-     
-   
-
-     }
-
-
 
     post {
         always {
-
-             steps { 
-                script {
-                    echo "Pipeline failed. Destroying the infrastructure..."
-                    
-                }       
-            }
+            echo "Pipeline completed with or without failures."
         }
         success {
             echo 'Pipeline completed successfully.'
         }
         failure {
-             steps { 
-                script {
-                    echo "Pipeline failed. Destroying the infrastructure..."
-                    
-                }       
-            }
+            echo "Pipeline failed. Destroying the infrastructure..."
         }
     }
 }
