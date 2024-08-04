@@ -111,6 +111,7 @@ pipeline {
                     bat """
                     set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%
                     set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%
+                    kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\namespace.yaml
                     kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\pv.yaml
                     kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\pvc.yaml
                     kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\deployment.yaml
