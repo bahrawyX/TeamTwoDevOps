@@ -126,7 +126,7 @@ pipeline {
       
          stage('Deploy Ingress') {
             steps {
-                sh 'kubectl apply -f ingress.yaml'
+                sh '--kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\ingress.yaml'
             }
         }
 
