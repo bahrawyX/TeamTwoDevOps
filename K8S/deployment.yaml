@@ -16,12 +16,12 @@ spec:
       containers:
       - name: team-two-app
         image: xbahrawy/finalproject:latest
-        ports:2
+        ports:
         - containerPort: 5000
-      #   volumeMounts:
-      #   - name: my-lms-storage
-      #     mountPath: /app/data
-      # volumes:
-      # - name: my-lms-storage
-      #   persistentVolumeClaim:
-      #     claimName: my-lms-storage-pvc
+        volumeMounts:
+        - name: my-lms-storage
+          mountPath: /app/data
+      volumes:
+      - name: my-lms-storage
+        persistentVolumeClaim:
+          claimName: my-lms-storage-pvc

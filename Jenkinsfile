@@ -25,7 +25,7 @@ pipeline {
                 script {
                     // Build the Docker image with build number as tag
                     docker.build("${DOCKER_IMAGE}:${env.BUILD_NUMBER}")
-                }
+                }1
             }
         }
                 stage('Push Docker Image to Docker Hub') {
@@ -112,8 +112,9 @@ stage('Deploy Kubernetes Resources') {
                     set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%
                     set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%
                     
-                    bash ${env.WORKSPACE}\\k8s\\update_image_tag.sh ${env.WORKSPACE}\\k8s\\deployment.yaml ${env.BUILD_NUMBER}
-                    
+                    kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\namespace.yaml
+                    kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\pv.yaml
+                    kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\pvc.yaml
                     kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\deployment.yaml
                     kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\service.yaml
                     """
@@ -121,15 +122,8 @@ stage('Deploy Kubernetes Resources') {
             }
         }
     }
-                // kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\namespace.yaml
-                    //  kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\pv.yaml
-                    // kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\pvc.yaml
-      
-         stage('Deploy Ingress') {
-            steps {
-                bat """ kubectl --kubeconfig ${KUBECONFIG_PATH} apply -f ${env.WORKSPACE}\\k8s\\ingress.yaml """
-            }
-        }
+     
+   
 
      }
 

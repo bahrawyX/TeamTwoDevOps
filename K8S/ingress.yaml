@@ -6,16 +6,18 @@ metadata:
 spec:
   ingressClassName: nginx  
   rules:
-  - host: lms-app.example.com
+  - host: a9c9e46b336df489c9e262592e34ea1e-714460492.us-east-2.elb.amazonaws.com
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: lms-app
+            name: team-two-app
             port:
               number: 5000
-  tls:
-  - hosts:
-    - lms-app.example.com
+    tls:
+    - hosts:
+      - a9c9e46b336df489c9e262592e34ea1e-714460492.us-east-2.elb.amazonaws.com
+      secretName: my-tls-secret
+

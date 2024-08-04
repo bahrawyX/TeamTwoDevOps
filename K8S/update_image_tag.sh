@@ -1,8 +1,12 @@
-#!/bin/bash
+@echo off
+setlocal enabledelayedexpansion
 
-# Define the variables
-yaml_file_path=$1
-build_number=$2
+set yaml_file_path=%1
+set build_number=%2
 
-# Replace 'latest' with the build number in the image tag
-sed -i "s|image: xbahrawy/finalproject:latest|image: xbahrawy/finalproject:$build_number|g" $yaml_file_path
+(for /f "delims=" %%i in (%yaml_file_path%) do (
+    set line=%%i
+    echo !line:latest=%build_number%!
+)) > %yaml_file_path%.tmp
+
+move /Y %yaml_file_path%.tmp %yaml_file_path%
