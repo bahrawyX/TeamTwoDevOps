@@ -20,31 +20,31 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    // Build the Docker image with build number as tag
-                    docker.build("${DOCKER_IMAGE}:${env.BUILD_NUMBER}")
-                }
-            }
-        }
+        // stage('Build Docker Image') {
+        //     steps {
+        //         script {
+        //             // Build the Docker image with build number as tag
+        //             docker.build("${DOCKER_IMAGE}:${env.BUILD_NUMBER}")
+        //         }
+        //     }
+        // }
 
-        stage('Push Docker Image to Docker Hub') {
-            steps {
-                script {
-                    echo "Pushing Docker image ${DOCKER_IMAGE}:${env.BUILD_NUMBER} to Docker Hub"
-                    withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS}", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
-                        bat """
-                        echo Logging into Docker Hub...
-                        docker login -u %DOCKER_USERNAME% -p %DOCKER_PASSWORD%
-                        docker tag ${DOCKER_IMAGE}:${env.BUILD_NUMBER} ${DOCKER_IMAGE}:latest
-                        docker push ${DOCKER_IMAGE}:${env.BUILD_NUMBER}
-                        docker push ${DOCKER_IMAGE}:latest
-                        """
-                    }                            
-                }
-            }
-        }
+        // stage('Push Docker Image to Docker Hub') {
+        //     steps {
+        //         script {
+        //             echo "Pushing Docker image ${DOCKER_IMAGE}:${env.BUILD_NUMBER} to Docker Hub"
+        //             withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS}", passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+        //                 bat """
+        //                 echo Logging into Docker Hub...
+        //                 docker login -u %DOCKER_USERNAME% -p %DOCKER_PASSWORD%
+        //                 docker tag ${DOCKER_IMAGE}:${env.BUILD_NUMBER} ${DOCKER_IMAGE}:latest
+        //                 docker push ${DOCKER_IMAGE}:${env.BUILD_NUMBER}
+        //                 docker push ${DOCKER_IMAGE}:latest
+        //                 """
+        //             }                            
+        //         }
+        //     }
+        // }
 
         stage('Terraform Init') {
             steps {
