@@ -104,24 +104,7 @@ pipeline {
                 }
             }
         }
-         stage('Delete Old Kubernetes Resources') {
-            steps {
-                script {
-                    withCredentials([usernamePassword(credentialsId: 'fd08b267-20f1-422b-b2cf-a2f446f18839', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                        bat """
-                        set AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%
-                        set AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%
-                        
-                        kubectl --kubeconfig ${KUBECONFIG_PATH} delete -f ${env.WORKSPACE}\\k8s\\namespace.yaml
-                        kubectl --kubeconfig ${KUBECONFIG_PATH} delete -f ${env.WORKSPACE}\\k8s\\pv.yaml
-                        kubectl --kubeconfig ${KUBECONFIG_PATH} delete -f ${env.WORKSPACE}\\k8s\\pvc.yaml
-                        kubectl --kubeconfig ${KUBECONFIG_PATH} delete -f ${env.WORKSPACE}\\k8s\\deployment.yaml
-                        kubectl --kubeconfig ${KUBECONFIG_PATH} delete -f ${env.WORKSPACE}\\k8s\\service.yaml
-                        """
-                    }
-                }
-            }
-        }
+
 
         stage('Deploy Kubernetes Resources') {
             steps {
